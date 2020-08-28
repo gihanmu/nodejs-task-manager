@@ -52,8 +52,8 @@ const getTasks = () => {
     return Task.find({});
 }
 
-const getTask = (id) => {
-    return Task.findById(id);
+const getTask = (id, userId) => {
+    return Task.findOne({_id : id, owner: user});
 }
 
 

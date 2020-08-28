@@ -15,16 +15,7 @@ router.get('/users/me', auth, async (req, res) => {
 });
 
 router.get('/user/:id', async (req, res) => {
-    // const user = await crud.getUser(req.params.id);
-    // await user.populate('Task').execPopulate();
-    // console.log(user)
-    // if (!user) {
-    //     res.status(404).send('Not found');
-    // }
-    // res.send({user});
-
-    const user = await User.findById('5f478dbaf1b8c81148210e9b');
-    await user.populate('tasks').execPopulate();
+    await req.user.populate('tasks').execPopulate();
     res.send({user});
    
 });
@@ -32,7 +23,8 @@ router.get('/user/:id', async (req, res) => {
 router.post('/user', async (req, res) => {
     const user = await crud.createUser(req.body);
     const token = await user.generateAuthToken();
-    res.send({user, token});
+    console.log('user', user);
+    res.send({user});
 });
 
 router.patch('/user/:id', async (req, res) => {
@@ -40,12 +32,14 @@ router.patch('/user/:id', async (req, res) => {
     res.send(result);
 });
 
-router.delete('/user/:id', async (req, res) => {
-    const user = await crud.deleteUser(req.params.id);
-    if (!user) {
-        res.status(404).send('Not found');
-    }
-    res.send(user);
+router.delete('/user/:id', auth, async (req, res) => {
+    console.log(req.user);
+    await req.user.remove();
+    res.status(200).send();
+    // if (!user) {
+    //     res.status(404).send('Not found');
+    // }
+    // res.send(user);
    
 });
 

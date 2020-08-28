@@ -2,6 +2,7 @@ const mongoose = require('mongoose');
 const validator = require('validator');
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
+const Task = require('./task');
 
 const userSchema = mongoose.Schema({
     name: {
@@ -31,7 +32,13 @@ const userSchema = mongoose.Schema({
            }
        }
     ]
+}, {
+    timestamps: true
 });
+
+//By default virtual fields are not included in the output
+userSchema.set('toObject', { virtuals: true });
+userSchema.set('toJSON', { virtuals: true });
 
 userSchema.pre('save', async function(next){
     const user = this;
@@ -39,6 +46,15 @@ userSchema.pre('save', async function(next){
         user.password = await bcrypt.hash(user.password, 10);
 
     }
+    next();
+});
+
+//Using middleware we delete all the tasks attached to a user when deleting a user
+//Cascading delete
+userSchema.pre('remove', async function(next){
+    const user = this;
+    console.log('Removing tasks first');
+    await Task.deleteMany({owner: user._id});
     next();
 })
 
@@ -51,10 +67,11 @@ userSchema.methods.generateAuthToken = async function(){
 }
 
 userSchema.methods.toJSON = function(){
-    const {name, age} = this;
-    return {
-      name, age
-    }
+    const user = this;
+    const userObj = user.toObject();
+    delete userObj.password;
+    return userObj;
+    
 }
 
 //This defines a relationship which will help to get tasks belong to a user
@@ -64,6 +81,8 @@ userSchema.virtual('tasks', {
     localField: '_id',
     foreignField: 'owner'
 });
+
+
 
 userSchema.statics.findByCredentials = async (name, password) => {
     const user = await User.findOne({name});
@@ -79,6 +98,9 @@ userSchema.statics.findByCredentials = async (name, password) => {
     }
 }
 
+
+
 const User = mongoose.model('User', userSchema);
 
 module.exports = User;
+

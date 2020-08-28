@@ -3,15 +3,35 @@ const router = express.Router();
 const crud = require('../db/mongoose');
 const auth = require('../middleware/auth');
 
-
-router.get('/tasks', async (req, res) => {
-    const tasks = await crud.getTasks();
-    res.send(tasks);
+//GET tasks?completed=true/false (Use query params)
+//use limit and skip for pagination
+//Use sort for sorting
+router.get('/tasks', auth, async (req, res) => {
+    const match = {}
+    const sort = {};
+    const sortByParts = req.query.sortBy ? req.query.sortBy.split('_') : [];
+    if (sortByParts.length) {
+        sort[sortByParts[0]] =  sortByParts[1] === 'desc' ? -1 : 1; // 1 for ASC, -1 for DESC
+    }
+ 
+    if(req.query.completed) {
+        match['completed'] = req.query.completed === 'true';
+    }
+  
+    await req.user.populate({
+        path: 'tasks',
+        match,
+        options: {
+            limit: parseInt(req.query.limit),
+            skip: parseInt(req.query.skip),
+            sort
+        }
+    }).execPopulate();
+    res.send({ tasks: req.user.tasks});
 });
 
-router.get('/task/:id', auth, async (req, res) => {
-    const task = await crud.getTask(req.params.id);
-    await task.populate('owner').execPopulate();
+router.get('/tasks/:id', auth, async (req, res) => {
+    const task = await crud.getTask(req.params.id, req.user._id);
     if (!task) {
         res.status(404).send('Not found');
     }
