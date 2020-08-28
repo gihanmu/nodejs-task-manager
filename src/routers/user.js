@@ -1,9 +1,25 @@
 const express = require('express');
+const multer = require('multer')
 const router = express.Router();
 const crud = require('../db/mongoose');
 const User = require('../models/User');
 const auth = require('../middleware/auth');
 
+
+const upload = multer({
+    limits: {
+        fileSize: 1000000
+    },
+    fileFilter(req, file, cb){
+        if (!file.originalname.match(/\.(jpg|jpeg|png)$/i)) {
+            console.log(file.originalname);
+            //if not a pdf throw an error
+           return cb(new Error('Upload a valid file'));
+        }
+        cb(undefined, true);
+        
+    }
+})
 
 router.get('/users/me', auth, async (req, res) => {
     const user = req.user;
@@ -75,6 +91,38 @@ router.post('/user/logout/all', auth, async (req, res) => {
     }
 
 });
+
+router.post('/users/me/avatar', auth, upload.single('upload'), async (req, res) => {
+    req.user.avatar = req.file.buffer;
+    await req.user.save();
+    res.status(200).send();
+}, (error, req, res, next) => {
+    res.status(500).send({error: error.message});
+});
+
+router.delete('/user/me/avatar', auth, async (req, res) => {
+    try{
+        const {user} = req;
+        user.avatar = undefined;
+        await user.save();
+        res.status(200).send();
+    }catch(error) {
+        res.status(500).send({error})
+    }
+
+});
+
+//Get user avatar image by user id
+router.get('/user/:id/avatar', async (req, res) => {
+    try {
+        const user = await User.findById(req.params.id);
+        console.log(user);
+        res.set('Content-type', 'image/jpg');
+        res.send(user.avatar);
+    } catch (error) {
+        
+    }
+})
 
 
 module.exports = router;
