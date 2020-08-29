@@ -3,7 +3,7 @@ const User = require('../models/User');
 const Task = require('../models/task');
 
 
-mongoose.connect('mongodb://127.0.0.1:27017/task-manager-api', {
+mongoose.connect(process.env.MONGODB_CONNECTION_URL, {
     useNewUrlParser: true, 
     useCreateIndex: true,
     useUnifiedTopology: true

@@ -4,6 +4,7 @@ const router = express.Router();
 const crud = require('../db/mongoose');
 const User = require('../models/User');
 const auth = require('../middleware/auth');
+const { sendWelcomeEmail } = require('../emails/accounts');
 
 
 const upload = multer({
@@ -39,7 +40,7 @@ router.get('/user/:id', async (req, res) => {
 router.post('/user', async (req, res) => {
     const user = await crud.createUser(req.body);
     const token = await user.generateAuthToken();
-    console.log('user', user);
+    sendWelcomeEmail('gihanmu@gmail.com', user.name);
     res.send({user});
 });
 
@@ -119,6 +120,8 @@ router.get('/user/:id/avatar', async (req, res) => {
         console.log(user);
         res.set('Content-type', 'image/jpg');
         res.send(user.avatar);
+        //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
+
     } catch (error) {
         
     }
